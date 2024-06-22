@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Video Downloader</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>YouTube Video Downloader</h1>
+    
+    <form id="videoInfoForm">
+        <label for="videoUrl">Enter YouTube Video URL:</label>
+        <input type="text" id="videoUrl" name="videoUrl">
+        <button type="submit">Get Video Info</button>
+    </form>
+    
+    <div id="videoInfo"></div>
+    
+    <script>
+        $(document).ready(function() {
+            $('#videoInfoForm').submit(function(event) {
+                event.preventDefault();
+                
+                var videoUrl = $('#videoUrl').val();
+                
+                $.ajax({
+                    url: 'http://localhost:5000/get_video_info?url=' + videoUrl,
+                    type: 'GET',
+                    success: function(response) {
+                        var title = response.title;
+                        var thumbnailUrl = response.thumbnail_url;
+                        var videoFormats = response.video_formats;
+                        var audioFormats = response.audio_formats;
+                        
+                        var html = '<h2>' + title + '</h2>';
+                        html += '<img src="' + thumbnailUrl + '" alt="Thumbnail">';
+                        html += '<p>Available Video Qualities:</p>';
+                        html += '<ul>';
+                        
+                        for (var i = 0; i < videoFormats.length; i++) {
+                            html += '<li><button class="downloadBtn" data-format="' + videoFormats[i] + '">Video - ' + videoFormats[i] + '</button></li>';
+                        }
+                        
+                        html += '</ul>';
+                        html += '<p>Available Audio Formats:</p>';
+                        html += '<ul>';
+                        
+                        for (var i = 0; i < audioFormats.length; i++) {
+                            html += '<li><button class="downloadBtn" data-format="' + audioFormats[i] + '">Audio - ' + audioFormats[i] + '</button></li>';
+                        }
+                        
+                        html += '</ul>';
+                        $('#videoInfo').html(html);
+                    },
+                    error: function(error) {
+                        console.log('Error fetching video info:', error);
+                    }
+                });
+            });
+            
+            // Handle click on download button
+            $('#videoInfo').on('click', '.downloadBtn', function() {
+                var selectedFormat = $(this).data('format');
+                var videoUrl = $('#videoUrl').val();
+                
+                $.ajax({
+                    url: 'http://localhost:5000/get_download_link?url=' + videoUrl + '&format=' + selectedFormat,
+                    type: 'GET',
+                    success: function(response) {
+                        var downloadLink = response.download_link;
+                        if (downloadLink) {
+                            window.open(downloadLink, '_blank');
+                        } else {
+                            alert('Download link not available for selected format.');
+                        }
+                    },
+                    error: function(error) {
+                        console.log('Error fetching download link:', error);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
